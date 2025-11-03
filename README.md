@@ -1,1 +1,1 @@
-# SearchForInfinity
+# Search for Postgresql Infinity value
