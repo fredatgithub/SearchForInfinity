@@ -302,8 +302,24 @@ namespace SearchForInfinity
     {
       if (cmbSchemas.SelectedItem == null) return;
 
-      var schemaName = cmbSchemas.SelectedItem.ToString();
+      string schemaName = cmbSchemas.SelectedItem.ToString();
+      await SearchForInfinityValuesAsync(schemaName);
+      
+      // Redimensionner les colonnes après le chargement des données
+      if (dgResults.Items.Count > 0)
+      {
+        dgResults.UpdateLayout();
+        foreach (var column in dgResults.Columns)
+        {
+          // Forcer la mise à jour de la largeur pour s'adapter au contenu
+          column.Width = 0;
+          column.Width = DataGridLength.Auto;
+        }
+      }
+    }
 
+    private async Task SearchForInfinityValuesAsync(string schemaName)
+    {
       try
       {
         UpdateStatus("Searching for timestamp columns with infinity values...");
