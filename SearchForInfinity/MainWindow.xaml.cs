@@ -41,6 +41,78 @@ namespace SearchForInfinity
       
       // Charger les paramètres de connexion sauvegardés
       LoadConnectionSettings();
+      
+      // Restaurer la position et la taille de la fenêtre
+      LoadWindowSettings();
+      
+      // S'abonner à l'événement de fermeture de la fenêtre
+      this.Closing += MainWindow_Closing;
+    }
+    
+    private void LoadWindowSettings()
+    {
+      var settings = Settings.Default;
+      
+      // Vérifier si les paramètres de fenêtre sont valides
+      if (settings.WindowLeft >= 0 && settings.WindowTop >= 0 && 
+          settings.WindowWidth > 0 && settings.WindowHeight > 0)
+      {
+        this.Left = settings.WindowLeft;
+        this.Top = settings.WindowTop;
+        this.Width = settings.WindowWidth;
+        this.Height = settings.WindowHeight;
+        this.WindowState = settings.WindowState;
+      }
+    }
+    
+    private void SaveWindowSettings()
+    {
+      var settings = Settings.Default;
+      
+      // Sauvegarder la position et la taille de la fenêtre
+      if (this.WindowState == WindowState.Normal)
+      {
+        settings.WindowLeft = this.Left;
+        settings.WindowTop = this.Top;
+        settings.WindowWidth = this.Width;
+        settings.WindowHeight = this.Height;
+      }
+      else
+      {
+        // Si la fenêtre est maximisée ou minimisée, sauvegarder les valeurs restaurées
+        var restoredState = this.RestoreBounds;
+        settings.WindowLeft = restoredState.Left;
+        settings.WindowTop = restoredState.Top;
+        settings.WindowWidth = restoredState.Width;
+        settings.WindowHeight = restoredState.Height;
+      }
+      
+      settings.WindowState = this.WindowState;
+      settings.Save();
+    }
+    
+    private void MainWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+    {
+      // Sauvegarder les paramètres de connexion
+      SaveConnectionSettings();
+      
+      // Sauvegarder la position et la taille de la fenêtre
+      SaveWindowSettings();
+      
+      // Fermer proprement la connexion à la base de données
+      try
+      {
+        if (_connection != null && _connection.State == System.Data.ConnectionState.Open)
+        {
+          _connection.Close();
+          _connection.Dispose();
+        }
+      }
+      catch (Exception ex)
+      {
+        MessageBox.Show($"Erreur lors de la fermeture de la connexion : {ex.Message}", 
+            "Avertissement", MessageBoxButton.OK, MessageBoxImage.Warning);
+      }
     }
     
     private void LoadConnectionSettings()
@@ -161,17 +233,6 @@ namespace SearchForInfinity
         btnTestConnection.Background = brush;
         btnTestConnection.Foreground = new SolidColorBrush(Colors.White);
       }
-      
-      // Réinitialiser la couleur après 3 secondes
-      var timer = new System.Windows.Threading.DispatcherTimer();
-      timer.Interval = TimeSpan.FromSeconds(3);
-      timer.Tick += (s, args) =>
-      {
-        btnTestConnection.ClearValue(Button.BackgroundProperty);
-        btnTestConnection.ClearValue(Button.ForegroundProperty);
-        timer.Stop();
-      };
-      timer.Start();
     }
 
     private async void BtnConnect_Click(object sender, RoutedEventArgs e)
