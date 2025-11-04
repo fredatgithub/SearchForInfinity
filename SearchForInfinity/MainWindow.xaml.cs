@@ -127,23 +127,51 @@ namespace SearchForInfinity
 
       return builder.ConnectionString;
     }
+    
+    private NpgsqlConnection CreateConnection()
+    {
+      return new NpgsqlConnection(BuildConnectionString());
+    }
 
     private async void BtnTestConnection_Click(object sender, RoutedEventArgs e)
     {
       try
       {
-        using (var conn = new NpgsqlConnection(BuildConnectionString()))
+        UpdateStatus("Testing connection...");
+        using (var conn = CreateConnection())
         {
           await conn.OpenAsync();
-          lblConnectionStatus.Text = "Connection successful!";
-          lblConnectionStatus.Foreground = Brushes.Green;
+          var version = (await new NpgsqlCommand("SELECT version();", conn).ExecuteScalarAsync())?.ToString();
+          UpdateStatus($"Connected successfully!\n{version}");
+          
+          // Changer la couleur du bouton en vert
+          var brush = new SolidColorBrush(Colors.Green);
+          brush.Freeze();
+          btnTestConnection.Background = brush;
+          btnTestConnection.Foreground = new SolidColorBrush(Colors.White);
         }
       }
       catch (Exception ex)
       {
-        lblConnectionStatus.Text = $"Connection failed: {ex.Message}";
-        lblConnectionStatus.Foreground = Brushes.Red;
+        UpdateStatus($"Connection failed: {ex.Message}");
+        
+        // Changer la couleur du bouton en rouge
+        var brush = new SolidColorBrush(Colors.Red);
+        brush.Freeze();
+        btnTestConnection.Background = brush;
+        btnTestConnection.Foreground = new SolidColorBrush(Colors.White);
       }
+      
+      // Réinitialiser la couleur après 3 secondes
+      var timer = new System.Windows.Threading.DispatcherTimer();
+      timer.Interval = TimeSpan.FromSeconds(3);
+      timer.Tick += (s, args) =>
+      {
+        btnTestConnection.ClearValue(Button.BackgroundProperty);
+        btnTestConnection.ClearValue(Button.ForegroundProperty);
+        timer.Stop();
+      };
+      timer.Start();
     }
 
     private async void BtnConnect_Click(object sender, RoutedEventArgs e)
