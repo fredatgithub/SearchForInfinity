@@ -6,6 +6,8 @@ using System.Collections.ObjectModel;
 using System.Data;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -18,6 +20,8 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Microsoft.Win32;
+using SearchForInfinity.Properties;
+using System.Configuration;
 
 namespace SearchForInfinity
 {
@@ -34,6 +38,77 @@ namespace SearchForInfinity
       InitializeComponent();
       _searchResults = new ObservableCollection<SearchResult>();
       dgResults.ItemsSource = _searchResults;
+      
+      // Charger les paramètres de connexion sauvegardés
+      LoadConnectionSettings();
+    }
+    
+    private void LoadConnectionSettings()
+    {
+      try
+      {
+        var settings = Settings.Default;
+        txtServer.Text = settings.Server;
+        txtPort.Text = settings.Port.ToString();
+        txtDatabase.Text = settings.Database;
+        txtUsername.Text = settings.Username;
+        
+        // Essayer de charger le mot de passe depuis des données sécurisées
+        try
+        {
+          var passwordInBytes = Convert.FromBase64String(settings.Password ?? string.Empty);
+          var entropy = Encoding.UTF8.GetBytes(Assembly.GetExecutingAssembly().FullName);
+          var decrypted = ProtectedData.Unprotect(passwordInBytes, entropy, DataProtectionScope.CurrentUser);
+          txtPassword.Password = Encoding.UTF8.GetString(decrypted);
+        }
+        catch
+        {
+          // En cas d'erreur, on laisse le mot de passe vide
+          txtPassword.Password = string.Empty;
+        }
+      }
+      catch (Exception ex)
+      {
+        MessageBox.Show($"Erreur lors du chargement des paramètres : {ex.Message}", 
+            "Erreur", MessageBoxButton.OK, MessageBoxImage.Warning);
+      }
+    }
+    
+    private void SaveConnectionSettings()
+    {
+      try
+      {
+        var settings = Properties.Settings.Default;
+        settings.Server = txtServer.Text;
+        
+        if (int.TryParse(txtPort.Text, out int port))
+        {
+          settings.Port = port;
+        }
+        
+        settings.Database = txtDatabase.Text;
+        settings.Username = txtUsername.Text;
+        
+        // Sauvegarder le mot de passe de manière sécurisée
+        if (!string.IsNullOrEmpty(txtPassword.Password))
+        {
+          var passwordInBytes = System.Text.Encoding.UTF8.GetBytes(txtPassword.Password);
+          var entropy = System.Text.Encoding.UTF8.GetBytes(Assembly.GetExecutingAssembly().FullName);
+          var encrypted = ProtectedData.Protect(passwordInBytes, entropy, DataProtectionScope.CurrentUser);
+          settings.Password = Convert.ToBase64String(encrypted);
+        }
+        else
+        {
+          settings.Password = string.Empty;
+        }
+        
+        settings.Save();
+      }
+      catch (Exception ex)
+      {
+        MessageBox.Show($"Erreur lors de la sauvegarde des paramètres : {ex.Message}", 
+            "Erreur", MessageBoxButton.OK, MessageBoxImage.Warning);
+      }
     }
 
     private string BuildConnectionString()
@@ -332,6 +407,27 @@ namespace SearchForInfinity
 
       // Force UI update
       CommandManager.InvalidateRequerySuggested();
+    }
+    
+    private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+    {
+      // Sauvegarder les paramètres de connexion avant de fermer
+      SaveConnectionSettings();
+      
+      // Fermer proprement la connexion à la base de données
+      try
+      {
+        if (_connection != null && _connection.State == System.Data.ConnectionState.Open)
+        {
+          _connection.Close();
+          _connection.Dispose();
+        }
+      }
+      catch (Exception ex)
+      {
+        MessageBox.Show($"Erreur lors de la fermeture de la connexion : {ex.Message}", 
+            "Avertissement", MessageBoxButton.OK, MessageBoxImage.Warning);
+      }
     }
   }
 }

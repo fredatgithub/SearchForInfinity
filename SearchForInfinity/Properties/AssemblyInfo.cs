@@ -1,6 +1,4 @@
 ﻿using System.Reflection;
-using System.Resources;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Windows;
 
@@ -10,9 +8,9 @@ using System.Windows;
 [assembly: AssemblyTitle("SearchForInfinity")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("e-SNCF")]
+[assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("SearchForInfinity")]
-[assembly: AssemblyCopyright("Copyright © e-SNCF 2025")]
+[assembly: AssemblyCopyright("Copyright © MIT Freddy Juhel 2025")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

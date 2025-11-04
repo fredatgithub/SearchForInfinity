@@ -6,7 +6,8 @@
         xmlns:local="clr-namespace:SearchForInfinity"
         mc:Ignorable="d"
         Title="Search for PostgreSQL Infinity Values" Height="600" Width="1000"
-        WindowStartupLocation="CenterScreen">
+        WindowStartupLocation="CenterScreen"
+        Closing="Window_Closing">
     <Grid Margin="10">
         <TabControl>
             <TabItem Header="Database Connection">
