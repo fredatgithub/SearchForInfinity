@@ -8,10 +8,9 @@ This is a WPF application written in C# targetting .NET 4.8
 
 # How to use it
 
-
 on the first tab, enter your credentials to log into the database
 
-On the second tab, choose the SQL schema.
+On the second tab, choose the SQL schema from a dropdown list.
 
 Click on the Search button to search all tables with colon with a timestamp type.
 
