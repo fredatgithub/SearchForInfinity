@@ -89,12 +89,15 @@
                     EnableRowVirtualization="True"
                     VirtualizingPanel.IsVirtualizing="True"
                     VirtualizingPanel.VirtualizationMode="Recycling"
-                    HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                    HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                    LoadingRow="DgResults_LoadingRow">
             <DataGrid.RowStyle>
               <Style TargetType="DataGridRow">
+                <Setter Property="Background" Value="{x:Null}" />
                 <Style.Triggers>
                   <DataTrigger Binding="{Binding RowCount, Converter={StaticResource GreaterThanConverter}, ConverterParameter=1}" Value="True">
-                    <Setter Property="Background" Value="#E8F5E9"/>
+                    <Setter Property="Background" Value="#66BB6A"/>
+                    <Setter Property="Foreground" Value="White"/>
                   </DataTrigger>
                 </Style.Triggers>
               </Style>

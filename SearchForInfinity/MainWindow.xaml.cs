@@ -1,5 +1,3 @@
-using Npgsql;
-using SearchForInfinity.Models;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -12,16 +10,12 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using Microsoft.Win32;
+using Npgsql;
+using SearchForInfinity.Models;
 using SearchForInfinity.Properties;
-using System.Configuration;
 
 namespace SearchForInfinity
 {
@@ -33,28 +27,61 @@ namespace SearchForInfinity
     private NpgsqlConnection _connection;
     private ObservableCollection<SearchResult> _searchResults;
 
+    private void DgResults_LoadingRow(object sender, DataGridRowEventArgs e)
+    {
+      if (e.Row.Item is SearchResult item)
+      {
+        try
+        {
+          // Log pour débogage
+          System.Diagnostics.Debug.WriteLine($"Traitement de la ligne - Table: {item.TableName}, Colonne: {item.ColumnName}, RowCount: {item.RowCount}");
+          
+          if (item.RowCount >= 1)
+          {
+            System.Diagnostics.Debug.WriteLine($"Mise en surbrillance de la ligne - RowCount: {item.RowCount} > 1");
+            e.Row.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#66BB6A"));
+            e.Row.Foreground = Brushes.White;
+          }
+          else
+          {
+            e.Row.ClearValue(DataGridRow.BackgroundProperty);
+            e.Row.ClearValue(DataGridRow.ForegroundProperty);
+          }
+        }
+        catch (Exception ex)
+        {
+          System.Diagnostics.Debug.WriteLine($"Erreur dans DgResults_LoadingRow: {ex.Message}");
+          System.Diagnostics.Debug.WriteLine($"StackTrace: {ex.StackTrace}");
+        }
+      }
+      else
+      {
+        System.Diagnostics.Debug.WriteLine("L'élément de la ligne n'est pas un SearchResult");
+      }
+    }
+
     public MainWindow()
     {
       InitializeComponent();
       _searchResults = new ObservableCollection<SearchResult>();
       dgResults.ItemsSource = _searchResults;
-      
+
       // Charger les paramètres de connexion sauvegardés
       LoadConnectionSettings();
-      
+
       // Restaurer la position et la taille de la fenêtre
       LoadWindowSettings();
-      
+
       // S'abonner à l'événement de fermeture de la fenêtre
       this.Closing += MainWindow_Closing;
     }
-    
+
     private void LoadWindowSettings()
     {
       var settings = Settings.Default;
-      
+
       // Vérifier si les paramètres de fenêtre sont valides
-      if (settings.WindowLeft >= 0 && settings.WindowTop >= 0 && 
+      if (settings.WindowLeft >= 0 && settings.WindowTop >= 0 &&
           settings.WindowWidth > 0 && settings.WindowHeight > 0)
       {
         this.Left = settings.WindowLeft;
@@ -64,11 +91,11 @@ namespace SearchForInfinity
         this.WindowState = settings.WindowState;
       }
     }
-    
+
     private void SaveWindowSettings()
     {
       var settings = Settings.Default;
-      
+
       // Sauvegarder la position et la taille de la fenêtre
       if (this.WindowState == WindowState.Normal)
       {
@@ -86,19 +113,19 @@ namespace SearchForInfinity
         settings.WindowWidth = restoredState.Width;
         settings.WindowHeight = restoredState.Height;
       }
-      
+
       settings.WindowState = this.WindowState;
       settings.Save();
     }
-    
+
     private void MainWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
     {
       // Sauvegarder les paramètres de connexion
       SaveConnectionSettings();
-      
+
       // Sauvegarder la position et la taille de la fenêtre
       SaveWindowSettings();
-      
+
       // Fermer proprement la connexion à la base de données
       try
       {
@@ -110,11 +137,11 @@ namespace SearchForInfinity
       }
       catch (Exception ex)
       {
-        MessageBox.Show($"Erreur lors de la fermeture de la connexion : {ex.Message}", 
+        MessageBox.Show($"Erreur lors de la fermeture de la connexion : {ex.Message}",
             "Avertissement", MessageBoxButton.OK, MessageBoxImage.Warning);
       }
     }
-    
+
     private void LoadConnectionSettings()
     {
       try
@@ -124,7 +151,7 @@ namespace SearchForInfinity
         txtPort.Text = settings.Port.ToString();
         txtDatabase.Text = settings.Database;
         txtUsername.Text = settings.Username;
-        
+
         // Essayer de charger le mot de passe depuis des données sécurisées
         try
         {
@@ -141,26 +168,26 @@ namespace SearchForInfinity
       }
       catch (Exception ex)
       {
-        MessageBox.Show($"Erreur lors du chargement des paramètres : {ex.Message}", 
+        MessageBox.Show($"Erreur lors du chargement des paramètres : {ex.Message}",
             "Erreur", MessageBoxButton.OK, MessageBoxImage.Warning);
       }
     }
-    
+
     private void SaveConnectionSettings()
     {
       try
       {
         var settings = Properties.Settings.Default;
         settings.Server = txtServer.Text;
-        
+
         if (int.TryParse(txtPort.Text, out int port))
         {
           settings.Port = port;
         }
-        
+
         settings.Database = txtDatabase.Text;
         settings.Username = txtUsername.Text;
-        
+
         // Sauvegarder le mot de passe de manière sécurisée
         if (!string.IsNullOrEmpty(txtPassword.Password))
         {
@@ -173,12 +200,12 @@ namespace SearchForInfinity
         {
           settings.Password = string.Empty;
         }
-        
+
         settings.Save();
       }
       catch (Exception ex)
       {
-        MessageBox.Show($"Erreur lors de la sauvegarde des paramètres : {ex.Message}", 
+        MessageBox.Show($"Erreur lors de la sauvegarde des paramètres : {ex.Message}",
             "Erreur", MessageBoxButton.OK, MessageBoxImage.Warning);
       }
     }
@@ -199,7 +226,7 @@ namespace SearchForInfinity
 
       return builder.ConnectionString;
     }
-    
+
     private NpgsqlConnection CreateConnection()
     {
       return new NpgsqlConnection(BuildConnectionString());
@@ -215,7 +242,7 @@ namespace SearchForInfinity
           await conn.OpenAsync();
           var version = (await new NpgsqlCommand("SELECT version();", conn).ExecuteScalarAsync())?.ToString();
           UpdateStatus($"Connected successfully!\n{version}");
-          
+
           // Changer la couleur du bouton en vert
           var brush = new SolidColorBrush(Colors.Green);
           brush.Freeze();
@@ -226,7 +253,7 @@ namespace SearchForInfinity
       catch (Exception ex)
       {
         UpdateStatus($"Connection failed: {ex.Message}");
-        
+
         // Changer la couleur du bouton en rouge
         var brush = new SolidColorBrush(Colors.Red);
         brush.Freeze();
@@ -304,7 +331,7 @@ namespace SearchForInfinity
 
       string schemaName = cmbSchemas.SelectedItem.ToString();
       await SearchForInfinityValuesAsync(schemaName);
-      
+
       // Redimensionner les colonnes après le chargement des données
       if (dgResults.Items.Count > 0)
       {
@@ -513,12 +540,12 @@ namespace SearchForInfinity
       // Force UI update
       CommandManager.InvalidateRequerySuggested();
     }
-    
+
     private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
     {
       // Sauvegarder les paramètres de connexion avant de fermer
       SaveConnectionSettings();
-      
+
       // Fermer proprement la connexion à la base de données
       try
       {
@@ -530,7 +557,7 @@ namespace SearchForInfinity
       }
       catch (Exception ex)
       {
-        MessageBox.Show($"Erreur lors de la fermeture de la connexion : {ex.Message}", 
+        MessageBox.Show($"Erreur lors de la fermeture de la connexion : {ex.Message}",
             "Avertissement", MessageBoxButton.OK, MessageBoxImage.Warning);
       }
     }
