@@ -4,10 +4,14 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SearchForInfinity"
+        xmlns:converters="clr-namespace:SearchForInfinity.Converters"
         mc:Ignorable="d"
         Title="Search for PostgreSQL Infinity Values" Height="600" Width="1000"
         WindowStartupLocation="CenterScreen"
         Closing="Window_Closing">
+  <Window.Resources>
+    <converters:GreaterThanConverter x:Key="GreaterThanConverter"/>
+  </Window.Resources>
   <Grid Margin="10">
     <TabControl>
       <TabItem Header="Database Connection">
@@ -86,6 +90,15 @@
                     VirtualizingPanel.IsVirtualizing="True"
                     VirtualizingPanel.VirtualizationMode="Recycling"
                     HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+            <DataGrid.RowStyle>
+              <Style TargetType="DataGridRow">
+                <Style.Triggers>
+                  <DataTrigger Binding="{Binding RowCount, Converter={StaticResource GreaterThanConverter}, ConverterParameter=1}" Value="True">
+                    <Setter Property="Background" Value="#E8F5E9"/>
+                  </DataTrigger>
+                </Style.Triggers>
+              </Style>
+            </DataGrid.RowStyle>
             <DataGrid.Resources>
               <Style TargetType="DataGridCell">
                 <Setter Property="Padding" Value="5"/>
