@@ -248,17 +248,21 @@ namespace SearchForInfinity
           brush.Freeze();
           btnTestConnection.Background = brush;
           btnTestConnection.Foreground = new SolidColorBrush(Colors.White);
+          
+          // Activer le bouton Connect
+          btnConnect.IsEnabled = true;
         }
       }
       catch (Exception ex)
       {
         UpdateStatus($"Connection failed: {ex.Message}");
 
-        // Changer la couleur du bouton en rouge
+        // Changer la couleur du bouton en rouge et désactiver le bouton Connect
         var brush = new SolidColorBrush(Colors.Red);
         brush.Freeze();
         btnTestConnection.Background = brush;
         btnTestConnection.Foreground = new SolidColorBrush(Colors.White);
+        btnConnect.IsEnabled = false;
       }
     }
 

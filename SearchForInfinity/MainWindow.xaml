@@ -46,16 +46,29 @@
           <Label Grid.Row="4" Grid.Column="0" Content="Password:" Margin="5"/>
           <PasswordBox x:Name="txtPassword" Grid.Row="4" Grid.Column="1" Margin="5"/>
 
-          <Button x:Name="btnTestConnection" Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" 
-                            Content="Test Connection" Width="150" Height="30" Margin="5" 
-                            HorizontalAlignment="Center" Click="BtnTestConnection_Click"/>
+          <StackPanel Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Center">
+            <Button x:Name="btnTestConnection" 
+                    Content="Test Connection" 
+                    Width="150" 
+                    Height="30" 
+                    Margin="5" 
+                    Click="BtnTestConnection_Click"/>
+                    
+            <Button x:Name="btnConnect" 
+                    Content="Connect" 
+                    Width="150" 
+                    Height="30" 
+                    Margin="5" 
+                    Click="BtnConnect_Click"
+                    IsEnabled="False"/>
+          </StackPanel>
 
-          <TextBlock x:Name="lblConnectionStatus" Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="2" 
-                               TextWrapping="Wrap" Margin="5"/>
-
-          <Button x:Name="btnConnect" Grid.Row="7" Grid.Column="0" Grid.ColumnSpan="2" 
-                            Content="Connect" Width="150" Height="30" Margin="5" 
-                            HorizontalAlignment="Center" Click="BtnConnect_Click"/>
+          <TextBlock x:Name="lblConnectionStatus" 
+                     Grid.Row="6" 
+                     Grid.Column="0" 
+                     Grid.ColumnSpan="2" 
+                     TextWrapping="Wrap" 
+                     Margin="5"/>
         </Grid>
       </TabItem>
 
