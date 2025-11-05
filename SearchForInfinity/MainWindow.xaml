@@ -86,10 +86,21 @@
               <ScrollViewer x:Name="svConnectionStatus" 
                           VerticalScrollBarVisibility="Auto"
                           Padding="5">
-                <TextBlock x:Name="lblConnectionStatus" 
-                           TextWrapping="Wrap" 
-                           FontFamily="Consolas, Courier New"
-                           FontSize="12"/>
+                <RichTextBox x:Name="rtbConnectionStatus" 
+                            IsReadOnly="True" 
+                            IsReadOnlyCaretVisible="True"
+                            FontFamily="Consolas" 
+                            FontSize="12"
+                            BorderThickness="0"
+                            Background="Transparent"
+                            VerticalScrollBarVisibility="Auto"
+                            ContextMenuOpening="RtbConnectionStatus_ContextMenuOpening">
+                    <RichTextBox.Resources>
+                        <Style TargetType="{x:Type Paragraph}">
+                            <Setter Property="Margin" Value="0"/>
+                        </Style>
+                    </RichTextBox.Resources>
+                </RichTextBox>
               </ScrollViewer>
             </Border>
           </Grid>

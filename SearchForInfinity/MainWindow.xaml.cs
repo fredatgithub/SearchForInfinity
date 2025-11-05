@@ -337,7 +337,19 @@ namespace SearchForInfinity
       }
 
       string schemaName = cmbSchemas.SelectedItem.ToString();
-      await SearchForInfinityValuesAsync(schemaName);
+      
+      // Afficher la fenêtre d'attente
+      var waitWindow = WaitWindow.ShowWaitWindow(this, "Searching for infinity values...");
+      
+      try
+      {
+        await SearchForInfinityValuesAsync(schemaName);
+      }
+      finally
+      {
+        // Fermer la fenêtre d'attente dans tous les cas (succès ou erreur)
+        waitWindow.Close();
+      }
 
       // Redimensionner les colonnes après le chargement des données
       if (dgResults.Items.Count > 0)
@@ -549,56 +561,46 @@ namespace SearchForInfinity
 
       Action updateAction = () =>
       {
-        // Créer un nouvel élément Run pour le message
-        var timestamp = new Run($"[{DateTime.Now:HH:mm:ss}] ")
+        // Créer un nouveau paragraphe pour le message
+        var paragraph = new Paragraph();
+        
+        // Ajouter l'horodatage
+        paragraph.Inlines.Add(new Run($"[{DateTime.Now:HH:mm:ss}] ")
         {
           Foreground = Brushes.Gray,
           FontStyle = FontStyles.Italic
-        };
+        });
 
+        // Ajouter le message
         var messageRun = new Run(message);
-
-        // Définir la couleur du message
         if (isError)
         {
           messageRun.Foreground = Brushes.Red;
           messageRun.FontWeight = FontWeights.Bold;
         }
+        paragraph.Inlines.Add(messageRun);
 
-        // Ajouter les éléments au TextBlock
-        lblConnectionStatus.Inlines.Add(timestamp);
-        lblConnectionStatus.Inlines.Add(messageRun);
-        lblConnectionStatus.Inlines.Add(new LineBreak());
+        // Ajouter le paragraphe au document
+        rtbConnectionStatus.Document.Blocks.Add(paragraph);
 
-        // Faire défiler vers le bas pour voir le dernier message
-        svConnectionStatus.ScrollToBottom();
+        // Faire défiler vers le bas
+        rtbConnectionStatus.ScrollToEnd();
 
-        // Limiter le nombre de lignes pour éviter les problèmes de performances
-        const int maxLines = 500;
-        var lines = lblConnectionStatus.Inlines.Count(line => line is LineBreak);
-        if (lines > maxLines)
+        // Limiter le nombre de blocs pour éviter les problèmes de performances
+        const int maxBlocks = 500;
+        while (rtbConnectionStatus.Document.Blocks.Count > maxBlocks)
         {
-          var toRemove = lines - maxLines;
-          var inlinesToRemove = lblConnectionStatus.Inlines
-              .TakeWhile(inline => toRemove > 0)
-              .Where(inline => inline is LineBreak)
-              .Take(toRemove)
-              .ToList();
-
-          foreach (var inline in inlinesToRemove)
-          {
-            lblConnectionStatus.Inlines.Remove(inline);
-          }
+          rtbConnectionStatus.Document.Blocks.Remove(rtbConnectionStatus.Document.Blocks.FirstBlock);
         }
       };
 
-      if (lblConnectionStatus.Dispatcher.CheckAccess())
+      if (rtbConnectionStatus.Dispatcher.CheckAccess())
       {
         updateAction();
       }
       else
       {
-        lblConnectionStatus.Dispatcher.Invoke(updateAction);
+        rtbConnectionStatus.Dispatcher.Invoke(updateAction);
       }
 
       // Forcer la mise à jour de l'interface utilisateur
@@ -607,8 +609,57 @@ namespace SearchForInfinity
 
     private void BtnClearLogs_Click(object sender, RoutedEventArgs e)
     {
-      lblConnectionStatus.Inlines.Clear();
+      rtbConnectionStatus.Document.Blocks.Clear();
       UpdateStatus("Historique des messages effacé");
+    }
+    
+    private void RtbConnectionStatus_ContextMenuOpening(object sender, ContextMenuEventArgs e)
+    {
+      // Créer un nouveau menu contextuel
+      var contextMenu = new ContextMenu();
+      
+      // Copier
+      var copyItem = new MenuItem { Header = "Copier", Command = ApplicationCommands.Copy };
+      copyItem.Click += (s, args) =>
+      {
+        if (rtbConnectionStatus.Selection.IsEmpty)
+        {
+          rtbConnectionStatus.SelectAll();
+          rtbConnectionStatus.Copy();
+          rtbConnectionStatus.Selection.Select(rtbConnectionStatus.CaretPosition, rtbConnectionStatus.CaretPosition);
+          UpdateStatus("Tout le contenu a été copié");
+        }
+        else
+        {
+          rtbConnectionStatus.Copy();
+          UpdateStatus("Sélection copiée");
+        }
+      };
+      
+      // Tout sélectionner
+      var selectAllItem = new MenuItem { Header = "Tout sélectionner", Command = ApplicationCommands.SelectAll };
+      selectAllItem.Click += (s, args) => 
+      {
+        rtbConnectionStatus.SelectAll();
+        rtbConnectionStatus.Focus();
+      };
+      
+      // Effacer l'historique
+      var clearItem = new MenuItem { Header = "Effacer l'historique" };
+      clearItem.Click += BtnClearLogs_Click;
+      
+      // Ajouter les éléments au menu
+      contextMenu.Items.Add(copyItem);
+      contextMenu.Items.Add(new Separator());
+      contextMenu.Items.Add(selectAllItem);
+      contextMenu.Items.Add(new Separator());
+      contextMenu.Items.Add(clearItem);
+      
+      // Définir le menu contextuel
+      rtbConnectionStatus.ContextMenu = contextMenu;
+      
+      // Annuler l'événement d'ouverture du menu par défaut
+      e.Handled = true;
     }
 
     private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
