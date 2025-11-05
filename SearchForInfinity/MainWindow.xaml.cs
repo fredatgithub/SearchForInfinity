@@ -241,7 +241,9 @@ namespace SearchForInfinity
         {
           await conn.OpenAsync();
           var version = (await new NpgsqlCommand("SELECT version();", conn).ExecuteScalarAsync())?.ToString();
-          UpdateStatus($"Connected successfully!\n{version}");
+          
+          // Mise à jour du statut avec succès
+          UpdateStatus($"✓ Connected successfully!\n{version}");
 
           // Changer la couleur du bouton en vert
           var brush = new SolidColorBrush(Colors.Green);
@@ -255,7 +257,8 @@ namespace SearchForInfinity
       }
       catch (Exception ex)
       {
-        UpdateStatus($"Connection failed: {ex.Message}");
+        // Mise à jour du statut avec erreur
+        UpdateStatus($"✗ Connection failed: {ex.Message}", true);
 
         // Changer la couleur du bouton en rouge et désactiver le bouton Connect
         var brush = new SolidColorBrush(Colors.Red);
@@ -536,15 +539,75 @@ namespace SearchForInfinity
       }
     }
 
-    private void UpdateStatus(string message)
+    private void UpdateStatus(string message, bool isError = false)
     {
-      lblStatus.Text = message;
-      lblStatusBar.Text = message;
+      if (string.IsNullOrWhiteSpace(message))
+          return;
+          
+      Action updateAction = () => 
+      {
+          // Créer un nouvel élément Run pour le message
+          var timestamp = new Run($"[{DateTime.Now:HH:mm:ss}] ") 
+          { 
+              Foreground = Brushes.Gray,
+              FontStyle = FontStyles.Italic
+          };
+          
+          var messageRun = new Run(message);
+          
+          // Définir la couleur du message
+          if (isError)
+          {
+              messageRun.Foreground = Brushes.Red;
+              messageRun.FontWeight = FontWeights.Bold;
+          }
+          
+          // Ajouter les éléments au TextBlock
+          lblConnectionStatus.Inlines.Add(timestamp);
+          lblConnectionStatus.Inlines.Add(messageRun);
+          lblConnectionStatus.Inlines.Add(new LineBreak());
+          
+          // Faire défiler vers le bas pour voir le dernier message
+          svConnectionStatus.ScrollToBottom();
+          
+          // Limiter le nombre de lignes pour éviter les problèmes de performances
+          const int maxLines = 500;
+          var lines = lblConnectionStatus.Inlines.Count(line => line is LineBreak);
+          if (lines > maxLines)
+          {
+              var toRemove = lines - maxLines;
+              var inlinesToRemove = lblConnectionStatus.Inlines
+                  .TakeWhile(inline => toRemove > 0)
+                  .Where(inline => inline is LineBreak)
+                  .Take(toRemove)
+                  .ToList();
+                  
+              foreach (var inline in inlinesToRemove)
+              {
+                  lblConnectionStatus.Inlines.Remove(inline);
+              }
+          }
+      };
 
-      // Force UI update
+      if (lblConnectionStatus.Dispatcher.CheckAccess())
+      {
+          updateAction();
+      }
+      else
+      {
+          lblConnectionStatus.Dispatcher.Invoke(updateAction);
+      }
+      
+      // Forcer la mise à jour de l'interface utilisateur
       CommandManager.InvalidateRequerySuggested();
     }
 
+    private void BtnClearLogs_Click(object sender, RoutedEventArgs e)
+    {
+        lblConnectionStatus.Inlines.Clear();
+        UpdateStatus("Historique des messages effacé");
+    }
+    
     private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
     {
       // Sauvegarder les paramètres de connexion avant de fermer
