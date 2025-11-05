@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Data;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -35,29 +36,29 @@ namespace SearchForInfinity
         try
         {
           // Log pour débogage
-          System.Diagnostics.Debug.WriteLine($"Traitement de la ligne - Table: {item.TableName}, Colonne: {item.ColumnName}, RowCount: {item.RowCount}");
-          
+          Debug.WriteLine($"Traitement de la ligne - Table: {item.TableName}, Colonne: {item.ColumnName}, RowCount: {item.RowCount}");
+
           if (item.RowCount >= 1)
           {
-            System.Diagnostics.Debug.WriteLine($"Mise en surbrillance de la ligne - RowCount: {item.RowCount} > 1");
+            Debug.WriteLine($"Mise en surbrillance de la ligne - RowCount: {item.RowCount} > 1");
             e.Row.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#66BB6A"));
             e.Row.Foreground = Brushes.White;
           }
           else
           {
-            e.Row.ClearValue(DataGridRow.BackgroundProperty);
-            e.Row.ClearValue(DataGridRow.ForegroundProperty);
+            e.Row.ClearValue(BackgroundProperty);
+            e.Row.ClearValue(ForegroundProperty);
           }
         }
-        catch (Exception ex)
+        catch (Exception exception)
         {
-          System.Diagnostics.Debug.WriteLine($"Erreur dans DgResults_LoadingRow: {ex.Message}");
-          System.Diagnostics.Debug.WriteLine($"StackTrace: {ex.StackTrace}");
+          Debug.WriteLine($"Erreur dans DgResults_LoadingRow: {exception.Message}");
+          Debug.WriteLine($"StackTrace: {exception.StackTrace}");
         }
       }
       else
       {
-        System.Diagnostics.Debug.WriteLine("L'élément de la ligne n'est pas un SearchResult");
+        Debug.WriteLine("L'élément de la ligne n'est pas un SearchResult");
       }
     }
 
@@ -74,7 +75,7 @@ namespace SearchForInfinity
       LoadWindowSettings();
 
       // S'abonner à l'événement de fermeture de la fenêtre
-      this.Closing += MainWindow_Closing;
+      Closing += MainWindow_Closing;
     }
 
     private void LoadWindowSettings()
@@ -82,14 +83,13 @@ namespace SearchForInfinity
       var settings = Settings.Default;
 
       // Vérifier si les paramètres de fenêtre sont valides
-      if (settings.WindowLeft >= 0 && settings.WindowTop >= 0 &&
-          settings.WindowWidth > 0 && settings.WindowHeight > 0)
+      if (settings.WindowLeft >= 0 && settings.WindowTop >= 0 && settings.WindowWidth > 0 && settings.WindowHeight > 0)
       {
-        this.Left = settings.WindowLeft;
-        this.Top = settings.WindowTop;
-        this.Width = settings.WindowWidth;
-        this.Height = settings.WindowHeight;
-        this.WindowState = settings.WindowState;
+        Left = settings.WindowLeft;
+        Top = settings.WindowTop;
+        Width = settings.WindowWidth;
+        Height = settings.WindowHeight;
+        WindowState = settings.WindowState;
       }
     }
 
@@ -98,24 +98,24 @@ namespace SearchForInfinity
       var settings = Settings.Default;
 
       // Sauvegarder la position et la taille de la fenêtre
-      if (this.WindowState == WindowState.Normal)
+      if (WindowState == WindowState.Normal)
       {
-        settings.WindowLeft = this.Left;
-        settings.WindowTop = this.Top;
-        settings.WindowWidth = this.Width;
-        settings.WindowHeight = this.Height;
+        settings.WindowLeft = Left;
+        settings.WindowTop = Top;
+        settings.WindowWidth = Width;
+        settings.WindowHeight = Height;
       }
       else
       {
         // Si la fenêtre est maximisée ou minimisée, sauvegarder les valeurs restaurées
-        var restoredState = this.RestoreBounds;
+        var restoredState = RestoreBounds;
         settings.WindowLeft = restoredState.Left;
         settings.WindowTop = restoredState.Top;
         settings.WindowWidth = restoredState.Width;
         settings.WindowHeight = restoredState.Height;
       }
 
-      settings.WindowState = this.WindowState;
+      settings.WindowState = WindowState;
       settings.Save();
     }
 
@@ -130,15 +130,15 @@ namespace SearchForInfinity
       // Fermer proprement la connexion à la base de données
       try
       {
-        if (_connection != null && _connection.State == System.Data.ConnectionState.Open)
+        if (_connection != null && _connection.State == ConnectionState.Open)
         {
           _connection.Close();
           _connection.Dispose();
         }
       }
-      catch (Exception ex)
+      catch (Exception exception)
       {
-        MessageBox.Show($"Erreur lors de la fermeture de la connexion : {ex.Message}",
+        MessageBox.Show($"Erreur lors de la fermeture de la connexion : {exception.Message}",
             "Avertissement", MessageBoxButton.OK, MessageBoxImage.Warning);
       }
     }
@@ -167,10 +167,9 @@ namespace SearchForInfinity
           txtPassword.Password = string.Empty;
         }
       }
-      catch (Exception ex)
+      catch (Exception exception)
       {
-        MessageBox.Show($"Erreur lors du chargement des paramètres : {ex.Message}",
-            "Erreur", MessageBoxButton.OK, MessageBoxImage.Warning);
+        MessageBox.Show($"Erreur lors du chargement des paramètres : {exception.Message}", "Erreur", MessageBoxButton.OK, MessageBoxImage.Warning);
       }
     }
 
@@ -178,7 +177,7 @@ namespace SearchForInfinity
     {
       try
       {
-        var settings = Properties.Settings.Default;
+        var settings = Settings.Default;
         settings.Server = txtServer.Text;
 
         if (int.TryParse(txtPort.Text, out int port))
@@ -192,8 +191,8 @@ namespace SearchForInfinity
         // Sauvegarder le mot de passe de manière sécurisée
         if (!string.IsNullOrEmpty(txtPassword.Password))
         {
-          var passwordInBytes = System.Text.Encoding.UTF8.GetBytes(txtPassword.Password);
-          var entropy = System.Text.Encoding.UTF8.GetBytes(Assembly.GetExecutingAssembly().FullName);
+          var passwordInBytes = Encoding.UTF8.GetBytes(txtPassword.Password);
+          var entropy = Encoding.UTF8.GetBytes(Assembly.GetExecutingAssembly().FullName);
           var encrypted = ProtectedData.Protect(passwordInBytes, entropy, DataProtectionScope.CurrentUser);
           settings.Password = Convert.ToBase64String(encrypted);
         }
@@ -204,10 +203,9 @@ namespace SearchForInfinity
 
         settings.Save();
       }
-      catch (Exception ex)
+      catch (Exception exception)
       {
-        MessageBox.Show($"Erreur lors de la sauvegarde des paramètres : {ex.Message}",
-            "Erreur", MessageBoxButton.OK, MessageBoxImage.Warning);
+        MessageBox.Show($"Erreur lors de la sauvegarde des paramètres : {exception.Message}", "Erreur", MessageBoxButton.OK, MessageBoxImage.Warning);
       }
     }
 
@@ -242,7 +240,7 @@ namespace SearchForInfinity
         {
           await conn.OpenAsync();
           var version = (await new NpgsqlCommand("SELECT version();", conn).ExecuteScalarAsync())?.ToString();
-          
+
           // Mise à jour du statut avec succès
           UpdateStatus($"✓ Connected successfully!\n{version}");
 
@@ -251,15 +249,15 @@ namespace SearchForInfinity
           brush.Freeze();
           btnTestConnection.Background = brush;
           btnTestConnection.Foreground = new SolidColorBrush(Colors.White);
-          
+
           // Activer le bouton Connect
           btnConnect.IsEnabled = true;
         }
       }
-      catch (Exception ex)
+      catch (Exception exception)
       {
         // Mise à jour du statut avec erreur
-        UpdateStatus($"✗ Connection failed: {ex.Message}", true);
+        UpdateStatus($"✗ Connection failed: {exception.Message}", true);
 
         // Changer la couleur du bouton en rouge et désactiver le bouton Connect
         var brush = new SolidColorBrush(Colors.Red);
@@ -288,10 +286,9 @@ namespace SearchForInfinity
 
         UpdateStatus("Connected to database. Please select a schema and click Search.");
       }
-      catch (Exception ex)
+      catch (Exception exception)
       {
-        MessageBox.Show($"Failed to connect to database: {ex.Message}", "Error",
-            MessageBoxButton.OK, MessageBoxImage.Error);
+        MessageBox.Show($"Failed to connect to database: {exception.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
       }
     }
 
@@ -321,10 +318,9 @@ namespace SearchForInfinity
           cmbSchemas.SelectedIndex = 0;
         }
       }
-      catch (Exception ex)
+      catch (Exception exception)
       {
-        MessageBox.Show($"Failed to load schemas: {ex.Message}", "Error",
-            MessageBoxButton.OK, MessageBoxImage.Error);
+        MessageBox.Show($"Failed to load schemas: {exception.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
       }
     }
 
@@ -335,7 +331,10 @@ namespace SearchForInfinity
 
     private async void BtnSearch_Click(object sender, RoutedEventArgs e)
     {
-      if (cmbSchemas.SelectedItem == null) return;
+      if (cmbSchemas.SelectedItem == null)
+      {
+        return;
+      }
 
       string schemaName = cmbSchemas.SelectedItem.ToString();
       await SearchForInfinityValuesAsync(schemaName);
@@ -412,11 +411,10 @@ namespace SearchForInfinity
         UpdateStatus($"Search completed. Found {_searchResults.Count} timestamp columns.");
         btnExport.IsEnabled = _searchResults.Any();
       }
-      catch (Exception ex)
+      catch (Exception exception)
       {
-        UpdateStatus($"Error: {ex.Message}");
-        MessageBox.Show($"An error occurred: {ex.Message}", "Error",
-            MessageBoxButton.OK, MessageBoxImage.Error);
+        UpdateStatus($"Error: {exception.Message}");
+        MessageBox.Show($"An error occurred: {exception.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
       }
     }
 
@@ -448,10 +446,10 @@ namespace SearchForInfinity
           }
         }
       }
-      catch (Exception ex)
+      catch (Exception exception)
       {
         // Log the error but continue with other columns
-        Console.WriteLine($"Error checking {schemaName}.{tableName}.{columnName}: {ex.Message}");
+        Console.WriteLine($"Error checking {schemaName}.{tableName}.{columnName}: {exception.Message}");
       }
     }
 
@@ -493,17 +491,19 @@ namespace SearchForInfinity
             window.Show();
           }
         }
-        catch (Exception ex)
+        catch (Exception exception)
         {
-          MessageBox.Show($"Failed to load data: {ex.Message}", "Error",
-              MessageBoxButton.OK, MessageBoxImage.Error);
+          MessageBox.Show($"Failed to load data: {exception.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
       }
     }
 
     private void BtnExport_Click(object sender, RoutedEventArgs e)
     {
-      if (!_searchResults.Any()) return;
+      if (!_searchResults.Any())
+      {
+        return;
+      }
 
       try
       {
@@ -533,9 +533,9 @@ namespace SearchForInfinity
               "Export Complete", MessageBoxButton.OK, MessageBoxImage.Information);
         }
       }
-      catch (Exception ex)
+      catch (Exception exception)
       {
-        MessageBox.Show($"Failed to export results: {ex.Message}", "Error",
+        MessageBox.Show($"Failed to export results: {exception.Message}", "Error",
             MessageBoxButton.OK, MessageBoxImage.Error);
       }
     }
@@ -543,72 +543,74 @@ namespace SearchForInfinity
     private void UpdateStatus(string message, bool isError = false)
     {
       if (string.IsNullOrWhiteSpace(message))
-          return;
-          
-      Action updateAction = () => 
       {
-          // Créer un nouvel élément Run pour le message
-          var timestamp = new Run($"[{DateTime.Now:HH:mm:ss}] ") 
-          { 
-              Foreground = Brushes.Gray,
-              FontStyle = FontStyles.Italic
-          };
-          
-          var messageRun = new Run(message);
-          
-          // Définir la couleur du message
-          if (isError)
+        return;
+      }
+
+      Action updateAction = () =>
+      {
+        // Créer un nouvel élément Run pour le message
+        var timestamp = new Run($"[{DateTime.Now:HH:mm:ss}] ")
+        {
+          Foreground = Brushes.Gray,
+          FontStyle = FontStyles.Italic
+        };
+
+        var messageRun = new Run(message);
+
+        // Définir la couleur du message
+        if (isError)
+        {
+          messageRun.Foreground = Brushes.Red;
+          messageRun.FontWeight = FontWeights.Bold;
+        }
+
+        // Ajouter les éléments au TextBlock
+        lblConnectionStatus.Inlines.Add(timestamp);
+        lblConnectionStatus.Inlines.Add(messageRun);
+        lblConnectionStatus.Inlines.Add(new LineBreak());
+
+        // Faire défiler vers le bas pour voir le dernier message
+        svConnectionStatus.ScrollToBottom();
+
+        // Limiter le nombre de lignes pour éviter les problèmes de performances
+        const int maxLines = 500;
+        var lines = lblConnectionStatus.Inlines.Count(line => line is LineBreak);
+        if (lines > maxLines)
+        {
+          var toRemove = lines - maxLines;
+          var inlinesToRemove = lblConnectionStatus.Inlines
+              .TakeWhile(inline => toRemove > 0)
+              .Where(inline => inline is LineBreak)
+              .Take(toRemove)
+              .ToList();
+
+          foreach (var inline in inlinesToRemove)
           {
-              messageRun.Foreground = Brushes.Red;
-              messageRun.FontWeight = FontWeights.Bold;
+            lblConnectionStatus.Inlines.Remove(inline);
           }
-          
-          // Ajouter les éléments au TextBlock
-          lblConnectionStatus.Inlines.Add(timestamp);
-          lblConnectionStatus.Inlines.Add(messageRun);
-          lblConnectionStatus.Inlines.Add(new LineBreak());
-          
-          // Faire défiler vers le bas pour voir le dernier message
-          svConnectionStatus.ScrollToBottom();
-          
-          // Limiter le nombre de lignes pour éviter les problèmes de performances
-          const int maxLines = 500;
-          var lines = lblConnectionStatus.Inlines.Count(line => line is LineBreak);
-          if (lines > maxLines)
-          {
-              var toRemove = lines - maxLines;
-              var inlinesToRemove = lblConnectionStatus.Inlines
-                  .TakeWhile(inline => toRemove > 0)
-                  .Where(inline => inline is LineBreak)
-                  .Take(toRemove)
-                  .ToList();
-                  
-              foreach (var inline in inlinesToRemove)
-              {
-                  lblConnectionStatus.Inlines.Remove(inline);
-              }
-          }
+        }
       };
 
       if (lblConnectionStatus.Dispatcher.CheckAccess())
       {
-          updateAction();
+        updateAction();
       }
       else
       {
-          lblConnectionStatus.Dispatcher.Invoke(updateAction);
+        lblConnectionStatus.Dispatcher.Invoke(updateAction);
       }
-      
+
       // Forcer la mise à jour de l'interface utilisateur
       CommandManager.InvalidateRequerySuggested();
     }
 
     private void BtnClearLogs_Click(object sender, RoutedEventArgs e)
     {
-        lblConnectionStatus.Inlines.Clear();
-        UpdateStatus("Historique des messages effacé");
+      lblConnectionStatus.Inlines.Clear();
+      UpdateStatus("Historique des messages effacé");
     }
-    
+
     private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
     {
       // Sauvegarder les paramètres de connexion avant de fermer
@@ -617,15 +619,15 @@ namespace SearchForInfinity
       // Fermer proprement la connexion à la base de données
       try
       {
-        if (_connection != null && _connection.State == System.Data.ConnectionState.Open)
+        if (_connection != null && _connection.State == ConnectionState.Open)
         {
           _connection.Close();
           _connection.Dispose();
         }
       }
-      catch (Exception ex)
+      catch (Exception exception)
       {
-        MessageBox.Show($"Erreur lors de la fermeture de la connexion : {ex.Message}",
+        MessageBox.Show($"Erreur lors de la fermeture de la connexion : {exception.Message}",
             "Avertissement", MessageBoxButton.OK, MessageBoxImage.Warning);
       }
     }
