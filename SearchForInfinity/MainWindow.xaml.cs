@@ -76,6 +76,15 @@ namespace SearchForInfinity
 
       // S'abonner à l'événement de fermeture de la fenêtre
       Closing += MainWindow_Closing;
+
+      // Display application version in the title
+      DisplayApplicationVersion();
+    }
+
+    private void DisplayApplicationVersion()
+    {
+      var version = Assembly.GetExecutingAssembly().GetName().Version;
+      Title = $"Search for Infinity - Version {version}";
     }
 
     private void LoadWindowSettings()
@@ -415,9 +424,9 @@ namespace SearchForInfinity
         }
 
         // Now check each column for infinity values
-        foreach (var column in timestampColumns)
+        foreach (var (TableName, ColumnName, DataType) in timestampColumns)
         {
-          await CheckForInfinityValuesAsync(schemaName, column.TableName, column.ColumnName, column.DataType);
+          await CheckForInfinityValuesAsync(schemaName, TableName, ColumnName);
         }
 
         UpdateStatus($"Search completed. Found {_searchResults.Count} timestamp columns.");
@@ -430,7 +439,7 @@ namespace SearchForInfinity
       }
     }
 
-    private async Task CheckForInfinityValuesAsync(string schemaName, string tableName, string columnName, string dataType)
+    private async Task CheckForInfinityValuesAsync(string schemaName, string tableName, string columnName)
     {
       try
       {
@@ -547,8 +556,7 @@ namespace SearchForInfinity
       }
       catch (Exception exception)
       {
-        MessageBox.Show($"Failed to export results: {exception.Message}", "Error",
-            MessageBoxButton.OK, MessageBoxImage.Error);
+        MessageBox.Show($"Failed to export results: {exception.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
       }
     }
 
@@ -678,8 +686,7 @@ namespace SearchForInfinity
       }
       catch (Exception exception)
       {
-        MessageBox.Show($"Erreur lors de la fermeture de la connexion : {exception.Message}",
-            "Avertissement", MessageBoxButton.OK, MessageBoxImage.Warning);
+        MessageBox.Show($"Erreur lors de la fermeture de la connexion : {exception.Message}", "Avertissement", MessageBoxButton.OK, MessageBoxImage.Warning);
       }
     }
   }
