@@ -16,8 +16,7 @@ namespace SearchForInfinity.Converters
       double valueToCompare;
       double compareValue;
 
-      if (!double.TryParse(value.ToString(), out valueToCompare) ||
-          !double.TryParse(parameter.ToString(), out compareValue))
+      if (!double.TryParse(value.ToString(), out valueToCompare) || !double.TryParse(parameter.ToString(), out compareValue))
       {
         return false; 
       }
