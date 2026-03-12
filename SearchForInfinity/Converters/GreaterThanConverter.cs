@@ -9,14 +9,18 @@ namespace SearchForInfinity.Converters
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
       if (value == null || parameter == null)
+      {
         return false;
+      }
 
       double valueToCompare;
       double compareValue;
 
       if (!double.TryParse(value.ToString(), out valueToCompare) ||
           !double.TryParse(parameter.ToString(), out compareValue))
-        return false;
+      {
+        return false; 
+      }
 
       return valueToCompare > compareValue;
     }
